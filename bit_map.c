@@ -3,7 +3,7 @@
 
 // returns the number of bytes to store bits booleans
 int BitMap_getBytes(int bits){
-  return bits/8 + (bits%8)!=0;
+  return bits/8 + ((bits%8)!=0);
 }
 
 // initializes a bitmap on an external array

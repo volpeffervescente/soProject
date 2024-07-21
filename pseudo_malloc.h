@@ -12,4 +12,4 @@ void pseudo_malloc_init(); //allocator initialization
 
 void* pseudo_malloc(size_t size); //for actual memory allocation
 
-void pseudo_free(void* mem_ptr, size_t size);  //for proper memory deallocation
+void pseudo_free(void* mem_ptr);  //for proper memory deallocation

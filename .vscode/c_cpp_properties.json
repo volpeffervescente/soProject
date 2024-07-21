@@ -3,7 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "/usr/include",
                 "/usr/include/c++/11/ext",
                 "/usr/include/x86_64-linux-gnu/c++/11"
             ],
@@ -16,7 +16,7 @@
         {
             "name": "lc",
             "includePath": [
-                "${workspaceFolder}/**"
+                "/usr/include*"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <math.h> // for floor and log2
 #include "buddy_allocator.h"
-#include <cassert>
 
 //returns level according to the index
 int levelIdx(size_t idx){
@@ -37,7 +36,7 @@ void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, char* bitmap_buf
 
   assert (num_levels<MAX_LEVELS);
   assert (bitmap_buffer_size>0);
-  assert (min_bucket_size == buffer_size>>num_levels)
+  assert (min_bucket_size == bitmap_buffer_size>>num_levels);
 
   // we need room also for level 0
   alloc->num_levels=num_levels;
@@ -99,10 +98,11 @@ void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int idx){
   //join
   //1. we destroy the two buddies in the free list;
   printf("merge \n");
+  //...probably another check on the budddy idx needed. . .
   if(BitMap_bit(&alloc->bit_map, buddy_idx)){ //==1
-    BitMap_setBit(&alloc->bit_map, idx);
-    BitMap_setBit(&alloc->bit_map, buddy_idx);
-    BitMap_setBit(&alloc->bit_map, parent_idx);
+    BitMap_setBit(&(alloc->bit_map), idx, 0);
+    BitMap_setBit(&alloc->bit_map, buddy_idx, 0);
+    BitMap_setBit(&alloc->bit_map, parent_idx, 1);
     //2. we release the parent
     BuddyAllocator_releaseBuddy(alloc, parent_idx);
   }
@@ -130,7 +130,6 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
     printf("no memory available\n");
     return 0;
   }
-
   // we write in the memory region managed the buddy address
   int level_from_idx = levelIdx(idx);//level from idx
   int offset = (idx-((1<<level_from_idx))-1);//offset
@@ -141,13 +140,13 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
 }
 //releases allocated memory
 void BuddyAllocator_free(BuddyAllocator* alloc, void* mem_addr) {
+  if(!mem_addr) return;
   // we retrieve the buddy from the system
-  mem_addr -= sizeof(int); //we need to calculate back the real mem address
-  BuddyListItem** buddy_ptr=(BuddyListItem**)p;
-  BuddyListItem* buddy=*buddy_ptr;
-  //printf("level %d", buddy->level);
+  //we need to calculate back the real mem address
+  int idx = ((int*)mem_addr - sizeof(int));
   // sanity check;
-  assert(buddy->start==p);
-  BuddyAllocator_releaseBuddy(alloc, buddy);
+  //assert . . .
+  assert(idx>=0);
+  BuddyAllocator_releaseBuddy(alloc, idx);
   return;
 }

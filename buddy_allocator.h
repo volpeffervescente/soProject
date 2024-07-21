@@ -1,6 +1,8 @@
 #pragma once
 #include "bit_map.h"
 
+#define MAX_LEVELS 16
+
 typedef struct  {
   BitMap bit_map;//bitmap pointer
   int num_levels;

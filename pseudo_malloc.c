@@ -38,7 +38,7 @@ void* pseudo_malloc(size_t size){
       printf("cannot allocate if size is < 0...retry again :/\n");
       return 0;
     }
-    size+=sizeof(int); //strategic move 
+    size += sizeof(int); //strategic move 
     //2) size<=page size / 4
     if(size<=(PAGE_SIZE/4)){
       printf("allocating memory with homemade buddy allocator :P\n");
@@ -54,5 +54,25 @@ void* pseudo_malloc(size_t size){
 }
 
 void pseudo_free(void* mem_ptr){
-
+    //abbiamo principalmente 3 casi possibili:
+    //1) mem_ptr is NULL
+    if(mem_ptr==0){
+      printf("cannot deallocate if memory pointer is NULL...retry again :/\n");
+      return;
+    }
+    size_t size = *((size_t*)mem_ptr); 
+    size -= sizeof(int);//strategic move 
+    //2) size<=page size / 4
+    if(size<=(PAGE_SIZE/4)){
+      printf("deallocating memory allocated with homemade buddy allocator :)\n");
+      BuddyAllocator_free(&alloc, mem_ptr);
+      return;
+    }
+    //3) size>page size / 4
+    else if(size<=(PAGE_SIZE/4)){
+      printf("deallocating memory allocated with mmap syscall ;)\n");
+      int mu = munmap(mem_ptr, size);
+      assert("mmap deallocation not gone well... :(" && mu!=-1);
+      return;
+    }
 }

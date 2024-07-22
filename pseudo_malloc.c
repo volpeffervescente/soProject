@@ -42,7 +42,7 @@ void* pseudo_malloc(size_t size){
     size += sizeof(int); //strategic move 
     //2) size<=page size / 4
     if(size<=(BUDDY_ALLOCATOR_THRESHOLD)){
-      printf("allocating memory with homemade buddy allocator :P, size is %ld.\n", size);
+      printf("allocating memory with homemade buddy allocator :P\n");
       return BuddyAllocator_malloc(&alloc, size);
     }
     //3) size>page size / 4
@@ -103,6 +103,8 @@ void pseudo_free(void* mem_ptr){
     else
     {
       printf("deallocating memory allocated with mmap syscall ;)\n");
-      munmap(mem_ptr, *((int *)mem_ptr));
+      int m = munmap(mem_ptr, *((int *)mem_ptr));
+      if(m==-1) perror("munmap");
+      printf("memory deallocated correctly\n\n");
     }
 }

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h> // for floor and log2
+#include "bit_map.h"
 #include "buddy_allocator.h"
 
 //returns level according to the index
@@ -134,10 +135,10 @@ int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level){
 
 int Buddyallocator_level(BuddyAllocator* alloc, size_t size){
   int level = alloc->num_levels -1;
-  int b_size = alloc->min_bucket_size;
+  size_t b_size = alloc->min_bucket_size;
   printf("Calculating level for size: %ld\n", size);
   while(level>=0){
-    printf("At level %d with block size %d\n", level, b_size);
+    printf("At level %d with block size %ld\n", level, b_size);
     if(size<=b_size){
       printf("Found level: %d for size: %zu\n", level, size);
       return level;

@@ -34,4 +34,4 @@ $(LIBS): bit_map.o buddy_allocator.o
 
 # Pulizia dei file generati
 clean:
-	$(RM) $(OBJS) $(LIBS) $(BINS)
+	$(RM) $(OBJS) $(LIBS) $(BINS) 

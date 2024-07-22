@@ -1,26 +1,30 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <math.h> // for floor and log2
 #include "buddy_allocator.h"
 
 //returns level according to the index
 int levelIdx(size_t idx){
-  return (int)floor(log2(idx));
+  return (int)floor(log2(idx+1));
 };
 //returns buddy index
 int buddyIdx(int idx){
   if (idx&0x1){
     return idx-1;
   }
-  return idx+1;
+  else if(idx==0)
+    return 0;
+  else
+    return idx+1;
 }
 //returns parent index
 int parentIdx(int idx){
-  return idx/2;
+  return (idx-1)/2;
 }
 //returns initial/start index
 int startIdx(int idx){
-  return (idx-(1<<levelIdx(idx)));
+  return (idx-(1<<levelIdx(idx))-1);
 }
 //returns right child index
 int rightIdx(int idx){
@@ -32,11 +36,12 @@ int leftIdx(int idx){
 }
 
 
-void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, char* bitmap_buffer, int bitmap_buffer_size, char* memory, int mem_size, int min_bucket_size){
-
+void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, uint8_t* bitmap_buffer, int bitmap_buffer_size, char* memory, int mem_size, int min_bucket_size){
   assert (num_levels<MAX_LEVELS);
   assert (bitmap_buffer_size>0);
-  assert (min_bucket_size == bitmap_buffer_size>>num_levels);
+  if (log2(mem_size) != floor(log2(mem_size))){
+        mem_size = min_bucket_size << num_levels;
+  }
 
   // we need room also for level 0
   alloc->num_levels=num_levels;
@@ -53,41 +58,102 @@ void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, char* bitmap_buf
 
   //the root node, at the beginning, is the only one available
   BitMap_setBit(&(alloc->bit_map), 0, 1);
-  for(int i=1; i<num_bits; i++){
-    BitMap_setBit(&(alloc->bit_map), i, 0);
-  }
+  //for(int i=1; i<num_bits; i++){
+    //BitMap_setBit(&(alloc->bit_map), i, 0);
+  //}
 
   printf("bitmap BUDDY INITIALIZED\n");
 };
 
 int find_first_available_buddy(BuddyAllocator* alloc, int level){
   if (level<0)
-    return 0;
+    return -1;
   assert(level < alloc->num_levels);
   int firstIndex = (1<<level)-1;
-  int lastIndex = ((1<<(level+1))-1);
-  for(int i=firstIndex; i<=lastIndex; i++){
-    if(BitMap_bit(&alloc->bit_map, i)==1)
+  printf("firstIndex value is :   %d \n", firstIndex);
+  int lastIndex = ((1<<(level+1))-2); // Index of the last block at this level
+  printf("lastIndex value is :   %d  \n", lastIndex);
+  //for(int i=firstIndex; i<=lastIndex; i++){
+  int i = firstIndex;
+  while(i<=lastIndex){
+    if(BitMap_bit(&(alloc->bit_map), i)!=0){
+      printf("---find_first_available_buddy--free buddy found! \n\n");
       return i;
-  }
+    }
+    i++;
+  }printf("---find_first_available_buddy--free buddy NOT found! \n\n");
+
   return -1;
 }
 
-void* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level){
+int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level){
+  //printf("--getBuddy--level value at the beginning of the function is   %d\n", level);
   if (level<0)
-    return 0;
+    return -1;
   assert(level <= alloc->num_levels);
-  
-  int buddy_idx=find_first_available_buddy(&alloc, level);
-  if(buddy_idx!=-1){
-    buddy_idx=leftIdx(buddy_idx);
-    int other_buddy= rightIdx(buddy_idx);
+  int buddy_idx=find_first_available_buddy(alloc, level);
+  printf("buddy_idx after find_first_available_buddy: %d\n", buddy_idx);
+  if(buddy_idx==-1){
+    int parent_idx = BuddyAllocator_getBuddy(alloc, level-1);
+    printf("parent_idx: %d\n", parent_idx);
+    if(parent_idx!=-1){
+      buddy_idx=leftIdx(parent_idx);
+      int other_buddy= rightIdx(parent_idx);
+      //the other buddy is now to be set to available:
+      BitMap_setBit(&alloc->bit_map, other_buddy, 1);
+      //BitMap_setBit(&alloc->bit_map, buddy_idx, 0); 
+    }
+    else if(parent_idx==-1){
+      return -1;
+    }
+    //the just picked buddy is now to be set to unavailable:
+    BitMap_setBit(&alloc->bit_map, buddy_idx, 0);
   }
-  else return -1;
-  
-  //the just picked buddy is now to be set to unavailable:
-  BitMap_setBit(&alloc->bit_map, buddy_idx, 0);
   return buddy_idx;
+  /*//printf("--getBuddy--level value at the beginning of the function is   %d\n", level);
+  if (level<0)
+    return -1;
+  assert(level <= alloc->num_levels);
+  int buddy_idx=find_first_available_buddy(alloc, level);
+  printf("buddy_idx after find_first_available_buddy: %d\n", buddy_idx);
+  if(buddy_idx!=-1){
+    //the just picked buddy is now to be set to unavailable:
+    BitMap_setBit(&alloc->bit_map, buddy_idx, 0);
+    return buddy_idx;
+  }  
+  int parent_idx = BuddyAllocator_getBuddy(alloc, level-1);
+  if(parent_idx==-1){
+    return -1;
+  }
+  int other_buddy= rightIdx(parent_idx);
+  //the other buddy is now to be set to available:
+  BitMap_setBit(&alloc->bit_map, other_buddy, 1);
+  buddy_idx = leftIdx(parent_idx);
+  return buddy_idx;*/
+}
+
+int Buddyallocator_level(BuddyAllocator* alloc, size_t size){
+  int level = alloc->num_levels -1;
+  int b_size = alloc->min_bucket_size;
+  printf("Calculating level for size: %ld\n", size);
+  while(level>=0){
+    printf("At level %d with block size %d\n", level, b_size);
+    if(size<=b_size){
+      printf("Found level: %d for size: %zu\n", level, size);
+      return level;
+    }
+    b_size = b_size * 2; 
+    level--;
+  }
+  printf("No valid level found for size: %zu\n", size);
+  return -1;
+
+}
+
+void* BuddyAllocator_address(BuddyAllocator* alloc, int idx, int level){
+  int level_from_idx = startIdx(idx);//level from idx
+	int offset = level_from_idx*(alloc->min_bucket_size * (1<<(alloc->num_levels-level-1)));
+	return (void *)alloc->memory + offset;
 }
 
 void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int idx){
@@ -114,39 +180,49 @@ void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int idx){
 //allocates memory
 void* BuddyAllocator_malloc(BuddyAllocator* alloc, size_t size) {
   // we determine the level of the page
-
-  int level = alloc->num_levels -1;
-  int b_size = alloc->min_bucket_size;
-  while(b_size < size){
-    b_size <<=1;
-    level--;
+  int level = Buddyallocator_level(alloc, size/*+sizeof(int)*/);
+  printf("requested: %ld bytes, level %d \n", size, level);
+  if(level==-1){
+    printf("level = %d...too big size for buddy...\n", level);
+    return NULL;
   }
-  printf("requested: %d bytes, level %d \n",
-         size, level);
-
   // we get a buddy of that size;
   int idx = BuddyAllocator_getBuddy(alloc, level);
+  printf("buddy allocator malloc---index value is:   %d\n", idx);
   if (idx==-1){
-    printf("no memory available\n");
-    return 0;
+    printf("no memory available anymore\n");
+    return NULL;
   }
+  printf("buddy at index %d assigned!\n", idx);
+  BitMap_setBit(&alloc->bit_map, idx, 0); //set the bit of the index
   // we write in the memory region managed the buddy address
-  int level_from_idx = levelIdx(idx);//level from idx
-  int offset = (idx-((1<<level_from_idx))-1);//offset
-  int block_dimension = (1<<(alloc->num_levels - level - 1))*alloc->min_bucket_size;//block dim
-  char* mem_address = (int*)(alloc->memory + (offset*block_dimension));
-  *((int*)mem_address)=idx;
-  return (mem_address + sizeof(int));
+  //had to split this part in 2 functions...
+  //int block_dimension = (1<<(alloc->num_levels - level - 1))*alloc->min_bucket_size;//block dim
+  //printf("block_dimension: %d\n", block_dimension);
+  /*
+  int* buddy_mem_address = (int*)BuddyAllocator_address(alloc, idx, level);
+  printf("buddy_mem_address: %p\n", buddy_mem_address);
+  *((int*)buddy_mem_address)=idx;
+  printf("memory allocated correctly\n\n");
+  return (void*)(buddy_mem_address + 1);*/
+
+  int buddyblock_size = alloc->mem_size / (1 << level); 	
+  int start_index = startIdx(idx);
+  char* buddyblock_start = alloc->memory + (start_index * buddyblock_size);
+  *(int*)(buddyblock_start) = idx; 
+  printf("memory allocated correctly\n\n");
+  return buddyblock_start + sizeof(int);
 }
 //releases allocated memory
 void BuddyAllocator_free(BuddyAllocator* alloc, void* mem_addr) {
   if(!mem_addr) return;
   // we retrieve the buddy from the system
   //we need to calculate back the real mem address
-  int idx = ((int*)mem_addr - sizeof(int));
+  int idx = *((int*)mem_addr - sizeof(int));
   // sanity check;
   //assert . . .
   assert(idx>=0);
   BuddyAllocator_releaseBuddy(alloc, idx);
+  printf("memory deallocated correctly\n\n");
   return;
 }

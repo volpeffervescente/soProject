@@ -1,12 +1,18 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/mman.h>
 #include <assert.h>
 #include <stdlib.h>
 #include "buddy_allocator.h"
 #include "pseudo_malloc.h"
 #include <bits/mman-linux.h>
+
+
+//becero ma mi sono rotta
+#define MAP_ANONYMOUS 0x20
+
 
 /*for small requests (< 1/4 of the page size) it uses a
 buddy allocator. Clearly, such a buddy allocator can
@@ -18,61 +24,63 @@ for large request (>=1/4 of the page size) uses a mmap.*/
 
 BuddyAllocator alloc;
 BitMap bitmap;
-int bitmap_buffer_size [(1<<BUDDY_ALLOCATOR_LEVELS)-1]; //also buddyes num
-char* memory [BUDDY_ALLOCATOR_SIZE];
+char memory[BUDDY_ALLOCATOR_SIZE];
+uint8_t bitmap_buffer[BITMAP_SIZE]; //buddy allocator buffer
 
-void pseudo_malloc_init(){
-    uint8_t* bitmap_buffer = (uint8_t*)bitmap_buffer_size + (7 * sizeof(int));
- 
-    BitMap_init(&bitmap, bitmap_buffer_size, &bitmap_buffer);
 
-    BuddyAllocator_init(&alloc, BUDDY_ALLOCATOR_LEVELS,
-                      bitmap_buffer, bitmap_buffer_size, memory,
-                       BUDDY_ALLOCATOR_SIZE, 1);
+void pseudo_malloc_init() {
+  BuddyAllocator_init(&alloc, BUDDY_ALLOCATOR_LEVELS, bitmap_buffer, BITMAP_SIZE, memory, BUDDY_ALLOCATOR_SIZE, MIN_BUDDY_SIZE);
 }
 
 void* pseudo_malloc(size_t size){
     //abbiamo principalmente 3 casi possibili:
-    //1) zize<=0
+    //1) size<=0
     if(size<=0){
       printf("cannot allocate if size is < 0...retry again :/\n");
-      return 0;
+      return NULL;
     }
     size += sizeof(int); //strategic move 
     //2) size<=page size / 4
-    if(size<=(PAGE_SIZE/4)){
-      printf("allocating memory with homemade buddy allocator :P\n");
+    if(size<=(BUDDY_ALLOCATOR_THRESHOLD)){
+      printf("allocating memory with homemade buddy allocator :P, size is %ld.\n", size);
       return BuddyAllocator_malloc(&alloc, size);
     }
     //3) size>page size / 4
-    else if(size<=(PAGE_SIZE/4)){
+    else if(size>(BUDDY_ALLOCATOR_THRESHOLD)){
       printf("allocating memory with mmap syscall >_<\n");
-      void * mmap_ptr= mmap(0, size, PROT_READ | PROT_WRITE , MAP_PRIVATE /*| MAP_ANONYMOUS*/, -1, 0); //having some problems with MAP_ANONYMOUS flag in linux...
-      assert("mmap allocation not gone well... :(" && mmap_ptr!=MAP_FAILED);
+      void * mmap_ptr= mmap(0, size, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); //having some problems with MAP_ANONYMOUS flag in linux...
+      if (mmap_ptr == MAP_FAILED) {
+        perror("mmap");
+        assert("mmap allocation not gone well... :(" && mmap_ptr != MAP_FAILED);
+        return NULL;
+    }
+      printf("memory allocated correctly\n\n");
       return mmap_ptr;
     }
+    return NULL;
 }
 
 void pseudo_free(void* mem_ptr){
     //abbiamo principalmente 3 casi possibili:
     //1) mem_ptr is NULL
-    if(mem_ptr==0){
-      printf("cannot deallocate if memory pointer is NULL...retry again :/\n");
+    if(mem_ptr==NULL){
+      printf("cannot deallocate because memory pointer is NULL...retry again :/\n");
       return;
     }
     size_t size = *((size_t*)mem_ptr); 
     size -= sizeof(int);//strategic move 
     //2) size<=page size / 4
-    if(size<=(PAGE_SIZE/4)){
+    if(size<=(BUDDY_ALLOCATOR_THRESHOLD)){
       printf("deallocating memory allocated with homemade buddy allocator :)\n");
       BuddyAllocator_free(&alloc, mem_ptr);
       return;
     }
     //3) size>page size / 4
-    else if(size<=(PAGE_SIZE/4)){
+    else if(size>(BUDDY_ALLOCATOR_THRESHOLD)){
       printf("deallocating memory allocated with mmap syscall ;)\n");
       int mu = munmap(mem_ptr, size);
       assert("mmap deallocation not gone well... :(" && mu!=-1);
+      printf("memory deallocated correctly\n\n");
       return;
     }
 }

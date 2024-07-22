@@ -1,5 +1,11 @@
 #include <assert.h>
 #include "bit_map.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+
 
 // returns the number of bytes to store bits booleans
 int BitMap_getBytes(int bits){
@@ -19,7 +25,7 @@ void BitMap_setBit(BitMap* bit_map, int bit_num, int status){
   // get byte
   int byte_num=bit_num>>3;
   assert(byte_num<bit_map->buffer_size);
-  int bit_in_byte=byte_num&0x07;
+  int bit_in_byte=bit_num&0x07;
   if (status) {
     bit_map->buffer[byte_num] |= (1<<bit_in_byte);
   } else {
@@ -29,8 +35,12 @@ void BitMap_setBit(BitMap* bit_map, int bit_num, int status){
 
 // inspects the status of the bit bit_num
 int BitMap_bit(const BitMap* bit_map, int bit_num){
-  int byte_num=bit_num>>3; 
-  assert(byte_num<bit_map->buffer_size);
-  int bit_in_byte=byte_num&0x07;
-  return (bit_map->buffer[byte_num] & (1<<bit_in_byte))!=0;
+  //printf("we're now in BitMap_bit funct...\n\n");
+  if(bit_num >= bit_map->buffer_size*8){
+    printf("max bit number exceeded  %d\n", bit_map->buffer_size*8);
+    perror("error bit_map_get");
+  }
+  int byte_num=bit_num/8; 
+  int bit_in_byte=bit_num%8;
+  return (bit_map->buffer[byte_num] >> bit_in_byte) & 1;
 }

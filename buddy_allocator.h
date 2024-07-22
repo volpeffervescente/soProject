@@ -13,12 +13,12 @@ typedef struct  {
 
 
 // initializes the buddy allocator, and checks that the buffer is large enough
-void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, char* bitmap_buffer, int bitmap_buffer_size, char* memory, int mem_size, int min_bucket_size);
+void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, uint8_t* bitmap_buffer, int bitmap_buffer_size, char* memory, int mem_size, int min_bucket_size);
 
 // returns (allocates) a buddy at a given level.
 // side effect on the internal structures
 // 0 id no memory available
-void* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
+int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
 
 
 // releases an allocated buddy, performing the necessary joins
@@ -37,3 +37,5 @@ int rightIdx(int idx);
 int leftIdx(int idx);
 
 int find_first_available_buddy(BuddyAllocator* alloc, int level);
+
+int Buddyallocator_level(BuddyAllocator* alloc, size_t size);

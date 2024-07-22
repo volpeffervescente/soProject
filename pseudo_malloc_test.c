@@ -44,31 +44,33 @@ int main(int argc, char** argv) {
   printf("memory allocation..\n");
   printf("\n");
   void* mem_ptr1 = pseudo_malloc(12);
-  void* mem_ptr2 = pseudo_malloc(20);
-  void* mem_ptr3 = pseudo_malloc(100);
-  void* mem_ptr4 = pseudo_malloc(20000);
-  void* mem_ptr5 = pseudo_malloc(400);
-  void* mem_ptr6 = pseudo_malloc(1000);
-  void* mem_ptr7 = pseudo_malloc(10000);
-  void* mem_ptr8 = pseudo_malloc(100000);
+ // void* mem_ptr2 = pseudo_malloc(20);
+ // void* mem_ptr3 = pseudo_malloc(100);
+  //void* mem_ptr4 = pseudo_malloc(20000);
+ // void* mem_ptr5 = pseudo_malloc(400);
+  //void* mem_ptr6 = pseudo_malloc(1000);
+  //void* mem_ptr7 = pseudo_malloc(10000);
+  //void* mem_ptr8 = pseudo_malloc(100000);
+ // void* mem_ptr9 = NULL;
 
   //freeing memory
   printf("\n");
   printf("freeing memory..\n");
   printf("\n");
   pseudo_free(mem_ptr1);
-  pseudo_free(mem_ptr2);
-  pseudo_free(mem_ptr3);
-  pseudo_free(mem_ptr4);
-  pseudo_free(mem_ptr5);
-  pseudo_free(mem_ptr6);
-  pseudo_free(mem_ptr7);
-  pseudo_free(mem_ptr8);
+ // pseudo_free(mem_ptr2);
+ // pseudo_free(mem_ptr3);
+ // pseudo_free(mem_ptr4);
+  //pseudo_free(mem_ptr5);
+  //pseudo_free(mem_ptr6);
+  //pseudo_free(mem_ptr7);
+  //pseudo_free(mem_ptr8);
+  //pseudo_free(mem_ptr9);
 
   //wrong/invalid size/memory address
-  printf("malloc...passing worng sizes\n");
+  printf("malloc...passing wrong sizes\n");
   pseudo_malloc(0);
-  pseudo_malloc(-14);
+  //pseudo_malloc(-14);
 
 
   printf("pseudo malloc/free testing went good!!!\n");

@@ -36,7 +36,7 @@ void* pseudo_malloc(size_t size){
     //abbiamo principalmente 3 casi possibili:
     //1) size<=0
     if(size<=0){
-      printf("cannot allocate if size is < 0...retry again :/\n");
+      printf("cannot allocate if size is < or = 0...retry again :/\n");
       return NULL;
     }
     size += sizeof(int); //strategic move 
@@ -48,10 +48,14 @@ void* pseudo_malloc(size_t size){
     //3) size>page size / 4
     else if(size>(BUDDY_ALLOCATOR_THRESHOLD)){
       printf("allocating memory with mmap syscall >_<\n");
+      if(size<=0){
+        printf("---mmap---cannot allocate if size is < or = 0...retry again :/\n");
+        return NULL;
+      } 
       void * mmap_ptr= mmap(0, size, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); //having some problems with MAP_ANONYMOUS flag in linux...
       if (mmap_ptr == MAP_FAILED) {
         perror("mmap");
-        assert("mmap allocation not gone well... :(" && mmap_ptr != MAP_FAILED);
+        //assert("mmap allocation not gone well... :(" && mmap_ptr != MAP_FAILED);
         return NULL;
     }
       printf("memory allocated correctly\n\n");
@@ -85,6 +89,11 @@ void pseudo_free(void* mem_ptr){
       printf("memory deallocated correctly\n\n");
       return;
     }*/
+    //int size = *((int *)mem_ptr);
+    if(mem_ptr==NULL /*|| *((int *)mem_ptr)<= 0*/){
+      printf("cannot deallocate because memory pointer is NULL...retry again :/\n");
+      return;
+    }
     //had to find another way to free memory, since I've made a mess previously. 
     if (mem_ptr >= (void *)memory && mem_ptr < (void *)memory + BUDDY_ALLOCATOR_SIZE * sizeof(char))
     {

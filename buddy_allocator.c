@@ -40,7 +40,8 @@ int leftIdx(int idx){
 void BuddyAllocator_init(BuddyAllocator* alloc, int num_levels, uint8_t* bitmap_buffer, int bitmap_buffer_size, char* memory, int mem_size, int min_bucket_size){
   assert (num_levels<MAX_LEVELS);
   assert (bitmap_buffer_size>0);
-  if (log2(mem_size) != floor(log2(mem_size))){
+  if (log2(mem_size) != floor(log2(mem_size))){  //floor arrotonda
+  //se mem_size non è un intero potenza di 2, 
         mem_size = min_bucket_size << num_levels;
   }
 
@@ -70,7 +71,7 @@ int find_first_available_buddy(BuddyAllocator* alloc, int level){
   if (level<0)
     return -1;
   assert(level < alloc->num_levels);
-  int firstIndex = (1<<level)-1;
+  int firstIndex = (1<<level)-1; //2alla n -1 
   printf("firstIndex value is :   %d \n", firstIndex);
   int lastIndex = ((1<<(level+1))-2); // Index of the last block at this level
   printf("lastIndex value is :   %d  \n", lastIndex);
@@ -198,7 +199,7 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, size_t size) {
     return NULL;
   }
   printf("buddy at index %d assigned!\n", idx);
-  BitMap_setBit(&alloc->bit_map, idx, 0); //set the bit of the index
+ //BitMap_setBit(&alloc->bit_map, idx, 0); //set the bit of the index
   // we write in the memory region managed the buddy address
   int buddyblock_size = alloc->mem_size / (1 << level); 	
   int start_index = startIdx(idx);

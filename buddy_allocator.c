@@ -149,7 +149,7 @@ void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int idx){
 //allocates memory
 void* BuddyAllocator_malloc(BuddyAllocator* alloc, size_t size) {
   // we determine the level of the page
-  int level = Buddyallocator_level(alloc, size/*+sizeof(int)*/);
+  int level = Buddyallocator_level(alloc, size+sizeof(int));
   printf("requested: %ld bytes, level %d \n", size, level);
   if(level==-1){
     printf("level = %d...too big size for buddy...\n", level);

@@ -30,7 +30,7 @@ void* pseudo_malloc(size_t size){
       printf("cannot allocate if size is < or = 0...retry again :/\n");
       return NULL;
     }
-    size += sizeof(int); //strategic move 
+    size += sizeof(int); //strategic move to include the allocation header size
     //2) size<=page size / 4
     if(size<=(BUDDY_ALLOCATOR_THRESHOLD)){
       printf("allocating memory with homemade buddy allocator :P\n");

@@ -27,9 +27,9 @@ void BitMap_setBit(BitMap* bit_map, int bit_num, int status){
   assert(byte_num<bit_map->buffer_size);
   int bit_in_byte=bit_num&0x07;
   if (status) {
-    bit_map->buffer[byte_num] |= (1<<bit_in_byte);
+    bit_map->buffer[byte_num] |= (1<<bit_in_byte); //sets the bit to 1
   } else {
-    bit_map->buffer[byte_num] &= ~(1<<bit_in_byte);
+    bit_map->buffer[byte_num] &= ~(1<<bit_in_byte);//sets the bit to 0
   }
 }
 
@@ -42,5 +42,5 @@ int BitMap_bit(const BitMap* bit_map, int bit_num){
   }
   int byte_num=bit_num/8; 
   int bit_in_byte=bit_num%8;
-  return (bit_map->buffer[byte_num] >> bit_in_byte) & 1;
+  return (bit_map->buffer[byte_num] >> bit_in_byte) & 1; //returns the bit value
 }

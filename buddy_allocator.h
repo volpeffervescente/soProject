@@ -4,11 +4,11 @@
 #define MAX_LEVELS 16
 
 typedef struct  {
-  BitMap bit_map;//bitmap pointer
-  int num_levels;
+  BitMap bit_map;//bitmap pointer to track buddy status
+  int num_levels;//number of levels in the buddy system
   char* memory; // the memory area to be managed
-  int mem_size;
-  int min_bucket_size; // the minimum page of RAM that can be returned
+  int mem_size;//total memory size
+  int min_bucket_size; // the minimum page of RAM that can be returned/that can be allocated
 } BuddyAllocator;
 
 
@@ -31,7 +31,7 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, size_t size);
 
 //releases allocated memory
 void BuddyAllocator_free(BuddyAllocator* alloc, void* mem_addr);
-
+//helper function to calcolate indexes
 int rightIdx(int idx);
 
 int leftIdx(int idx);
